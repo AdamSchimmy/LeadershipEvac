@@ -1,4 +1,4 @@
-import pygame
+import pygame 
 import random
 import math
 
@@ -88,31 +88,6 @@ class Leader(Entity):
         self.move_towards(*self.target_exit)
         self.avoid_collisions(entities)
 
-
-# class Pedestrian(Entity):
-#     def __init__(self, x, y, initial_exit):
-#         super().__init__(x, y, GREEN, SPEED)
-#         self.initial_exit = initial_exit
-#         self.assigned_exit = initial_exit
-#
-#     def closer_to_exit_than_leader(self, leader):
-#         if leader:
-#             distance_to_leader = math.hypot(leader.x - self.x, leader.y - self.y)
-#             distance_to_exit = math.hypot(self.assigned_exit[0] - self.x, self.assigned_exit[1] - self.y)
-#             return distance_to_exit < distance_to_leader
-#         return False
-#
-#     def update(self, leaders, entities):
-#         closest_leader = min(leaders, key=lambda l: math.hypot(l.x - self.x, l.y - self.y), default=None)
-#         if closest_leader and math.hypot(closest_leader.x - self.x, closest_leader.y - self.y) < FOLLOW_DISTANCE:
-#             if self.closer_to_exit_than_leader(closest_leader):
-#                 self.move_towards(*self.assigned_exit)
-#             else:
-#                 self.assigned_exit = closest_leader.target_exit
-#                 self.move_towards(closest_leader.x, closest_leader.y)
-#         else:
-#             self.move_towards(*self.assigned_exit)
-#         self.avoid_collisions(entities)
 class Pedestrian(Entity):
     def __init__(self, x, y, initial_exit):
         super().__init__(x, y, GREEN, SPEED)
@@ -226,6 +201,8 @@ def run_sim(USE_LEADERS = True):
         clock.tick(30)
 
     pygame.quit()
+
+
 wLeadersTimes = []
 wOutLeaders = []
 for i in range(10):
