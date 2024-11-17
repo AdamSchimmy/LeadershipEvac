@@ -1,7 +1,26 @@
-import pygame 
+import pygame
 import random
 import math
+import csv
 
+
+CSV_FILE = "simulation_results.csv"
+def initialize_csv(file_name):
+    try:
+        with open(file_name, mode="w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["Simulation", "Use Leaders", "Num Pedestrians", "Total Time (s)"])
+    except FileExistsError:
+        # File already exists, no need to rewrite the header
+        pass
+
+def save_results_to_csv(simulation_num, use_leaders, num_pedestrians, total_time, file_name=CSV_FILE):
+    with open(file_name, mode="a", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow([simulation_num, use_leaders,num_pedestrians, total_time])
+
+
+initialize_csv(CSV_FILE)
 # Initialize Pygame
 pygame.init()
 
@@ -23,7 +42,7 @@ USE_LEADERS = True  # Set to False to test without leaders
 NUM_PEDESTRIANS = 100
 NUM_LEADERS = 3 if USE_LEADERS else 0
 SPEED = 2
-FOLLOW_DISTANCE = 100
+FOLLOW_DISTANCE = 75
 COLLISION_RADIUS = 10
 EXIT_RADIUS = 10
 
@@ -124,23 +143,27 @@ class Pedestrian(Entity):
         self.avoid_collisions(entities)
 
 
-# # Create leaders and pedestrians
-# leaders = [Leader(random.randint(50, WIDTH - 50), random.randint(50, HEIGHT - 50), exits[i]) for i in
-#            range(NUM_LEADERS)]
-# pedestrians = [Pedestrian(random.randint(50, WIDTH - 50), random.randint(50, HEIGHT - 50), random.choice(exits)) for _
-#                in range(NUM_PEDESTRIANS)]
-# all_entities = leaders + pedestrians
+def assign_exits_to_leaders(leaders, exits):
+    # Calculate distances and assign nearest available exit to each leader
+    remaining_exits = exits[:]
+    for leader in sorted(leaders,
+                         key=lambda l: min(math.hypot(l.x - ex[0], l.y - ex[1]) for ex in remaining_exits)):
+        # Sort remaining exits by distance to the current leader
+        closest_exit = min(remaining_exits, key=lambda ex: math.hypot(leader.x - ex[0], leader.y - ex[1]))
+        leader.target_exit = closest_exit
+        remaining_exits.remove(closest_exit)
 
-# Main simulation loop
-def run_sim(USE_LEADERS = True):
-
-    leaders = [Leader(random.randint(50, WIDTH - 50), random.randint(50, HEIGHT - 50), exits[i]) for i in
+def run_sim(USE_LEADERS=True, num_pedestrians=NUM_PEDESTRIANS, simulation_num = 1):
+    leaders = [Leader(random.randint(50, WIDTH - 50), random.randint(50, HEIGHT - 50), None) for _ in
                range(NUM_LEADERS)]
-    pedestrians = [Pedestrian(random.randint(50, WIDTH - 50), random.randint(50, HEIGHT - 50), random.choice(exits)) for
-                   _
-                   in range(NUM_PEDESTRIANS)]
-    if not USE_LEADERS:
+    pedestrians = [Pedestrian(random.randint(50, WIDTH - 50), random.randint(50, HEIGHT - 50), random.choice(exits))
+                   for _ in range(num_pedestrians)]
+
+    if USE_LEADERS:
+        assign_exits_to_leaders(leaders, exits)  # Assign nearest exits to leaders
+    else:
         leaders = []
+
     all_entities = leaders + pedestrians
     running = True
     clock = pygame.time.Clock()
@@ -194,6 +217,8 @@ def run_sim(USE_LEADERS = True):
             mode_text = "With Leaders" if USE_LEADERS else "Without Leaders"
             final_text = font.render(f"{mode_text} - Total Time: {total_time:.2f} s", True, BLACK)
             screen.blit(final_text, (WIDTH // 2 - 150, HEIGHT // 2))
+
+            save_results_to_csv(simulation_num, USE_LEADERS, num_pedestrians, str(total_time))
             return total_time
 
 
@@ -205,13 +230,18 @@ def run_sim(USE_LEADERS = True):
 
 wLeadersTimes = []
 wOutLeaders = []
-for i in range(10):
+pedest_pop = [10, 20, 40, 80, 160]
+for i in range(20):
+    for k in range(len(pedest_pop)):
+        run_sim(True, pedest_pop[k], i + 1)
+        run_sim(False, pedest_pop[k], i + 1)
+for i in range(1):
     wLeadersTimes.append(run_sim())
 print(wLeadersTimes)
 avg = sum(wLeadersTimes) / len(wLeadersTimes)
 print(avg)
-for i in range(10):
-    wOutLeaders.append(run_sim(False))
-print(wOutLeaders)
-avg = sum(wOutLeaders) / len(wOutLeaders)
-print(avg)
+# for i in range(1):
+#     wOutLeaders.append(run_sim(False))
+# print(wOutLeaders)
+# avg = sum(wOutLeaders) / len(wOutLeaders)
+# print(avg)
